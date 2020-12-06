@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>tic_tac_toy</title>
+		
+		<style>
+			body{
+				padding: 100px 0 0 200px;
+			}
+			
+			.cell{
+				width: 100px;
+				height: 100px;
+				background-color: #333;
+				border: 1px solid #ffffff;
+				display: inline-block;
+				vertical-align: middle;
+				
+				text-align: center;
+				line-height: 100px;
+				font-size: 70px;
+				font-weight: 600;
+				color: crimson;
+				cursor: pointer;
+				box-shadow: 5px 5px 20px #b5b5b5;
+			}
+			.cell:hover{
+				border: 1px solid grey;
+			}
+			
+		</style>
+	</head>
+	
+	<body>
+		
+		<div id="board"></div>
+	</body>
+</html>
+
+
+<script>
+	let arr= [
+		0,0,0,
+		0,0,0,
+		0,0,0,
+	]
+	
+	
+	let color= 1   // 1.〇  2.〤  (默认〇先手)  (〃'▽'〃)..
+	
+	/**
+	 *  绘画棋盘
+	 * */
+	function show(){
+		let board= document.getElementById('board') 
+		
+		board.innerHTML= ''                                     //初始化棋盘
+		
+		for(let i= 0; i< 3; i++){                               //循环每一行
+			for(let j= 0; j< 3; j++){                           //循环每一行的每一项
+				let cell= document.createElement('div')
+				cell.classList.add('cell')
+				cell.innerText= arr[i*3+j]== 2? '〤':
+					arr[i*3+j]== 1? '〇': '',
+				cell.addEventListener('click', ()=> userMove(i,j))   //添加点击事件
+				board.appendChild(cell)
+				
+			}
+			board.appendChild(document.createElement("br"))
+		}
+	}
+	
+	/**
+	 * 	电脑AI 下棋
+	 * */
+	 function computerMove(){
+		 let choice= bestChoice(arr, color);                   //首先获取一个最好的下棋点
+		 console.log(choice)
+		 if(choice.point)	                                   //如果有这个点位的话 就下出来
+			arr[choice.point[1]* 3+ choice.point[0]]= color    // ************  没太看明白咋算的 知道也是i*3+j  但不明白为什么  **************
+		 if(check(arr, color)){                     
+			 alert(color== 2? '〤 is winner!': '〇 is winner!')
+		 }
+		 
+		 color= 3- color
+		 show() 
+	 }
+	
+	/**
+	 *  玩家点击函数
+	 * */
+	function userMove(x,y){
+		arr[x*3+y]= color
+		
+		if(check(arr, color)){                                            //校验判断输赢
+			alert(color== 2? '〤 is winner!': '〇 is winner!')   // 判断check返回为true的时候  color的落子为 〇 or 〤
+		}
+		
+		color= 3- color
+		console.log(3- color==2? '〇': '〤',bestChoice(arr,color))                       //每次落子校验双方局势
+		show() 
+		computerMove()                                            
+		
+		if(willWin(arr, color)){                                 //校验下一步有赢棋的步
+			console.log(color== 2? '〤 will win!': '〇 will win!')   
+		}
+	}
+	
+	/**
+	 *  校验输赢
+	 * */
+	 function check(arr, color){
+		 for(let i= 0; i< 3; i++){                              //判断 横排满3个 
+			 let win= true
+			 for(let j= 0; j< 3; j++){
+				 if(arr[i * 3 + j]!= color){                         //如果一排中的三个有不等于当前color的值 就不算赢
+					 win= false
+				 }
+			 }
+			 if(win) return true
+		 }
+		 
+		 for(let i= 0; i< 3; i++){                              //判断 纵列满3个
+			 let win= true
+			 for(let j= 0; j< 3; j++){
+				 if(arr[j * 3 + i]!= color){                         //如果一列中的三个有不等于当前color的值 就不算赢
+					 win= false
+				 }
+			 }
+			 if(win) return true
+		 }
+		 {
+			 let win= true
+			 for(let j= 0; j< 3; j++){
+				 if(arr[j* 3+ 2- j] != color){                       // 判断从右向左斜向下的情况  
+					 win= false
+				 }
+			 }
+			 if(win) return true
+		 }
+		 {
+			 let win= true
+			 for(let j= 0; j< 3; j++){
+				 if(arr[j* 3 + j]!= color){                      // 判断从左向右斜向下的情况 
+					 win= false
+				 }
+			 }
+			 if(win) return true
+		 }
+	 }
+	 
+	 /**
+	  *  clone原数组  保护数据
+	  * */
+	  function clone(arr){
+		  // return JSON.parse(JSON.stringify(arr)) 
+		  return Object.create(arr)
+	  }
+	  
+	  /**
+	   *   判断下一步是否可以赢棋   初步AI
+	   * */
+	   function willWin(arr, color){
+		   for(let i= 0; i< 3; i++){
+			   for(let j= 0; j< 3; j++){
+				   if(arr[i*3+j])                              //如果不是空就跳过当前循环 继续下一个循环
+						continue;
+					let tmp= clone(arr)                       //如果是空就clone出一份新的数组
+					tmp[i*3+j]= color                          //在clone的新数组中   用color把剩余的空全部填满  
+					if(check(tmp, color)){                    //如果其中有赢棋 就返回点位
+						return [j,i];
+						// return [i*3+j];          //************  其实应该返回这个？ 都可以当做true  请老师指点  而且为什么[i,j]不行 如果是[i,j] AI有点傻乎乎 ************
+					}
+			   }
+		   }
+		   
+		   return null;                                        //如果没有赢棋  就返回null
+	   }
+	   
+	   /**
+		* 	智能AI 
+		* */
+		function bestChoice(arr, color){
+			let p;
+			if(p= willWin(arr,color)){                        //排除特例 要赢得情况直接返回point点位
+				return{
+					point: p,                                 //下一步最好的点位
+					result: 1,                                //判断局势  -1:要输 0:和棋 1:要赢 
+				}
+			}
+			
+			
+			let result= -2                                   //先给一个 弱于任何情况的值(初始值)
+			let point= null                                  //初始值
+			outer:for(let i= 0; i< 3; i++){                        //还是先循环出所有能走的点位
+				for(let j= 0; j< 3; j++){
+					if(arr[i*3+j]!== 0) 
+						continue;
+					let tmp= clone(arr)
+					tmp[i*3+j]= color
+					let r= bestChoice(tmp, 3-color).result   //看对方下棋后的局势
+					
+					if(-r> result){                          //对方赢等于我们输  找对方结果里最差的
+						result= -r
+						// point= [i*3+j]
+						point= [j,i]                          //返回留给对方最差局面的点   ********* 不懂为什么还是[j,i] 而且为什么[i,j]不行 如果是[i,j] AI有点傻乎乎 *********           
+					}
+					
+					if(result== 1){                               //win-lost  胜负剪枝  优化性能
+						break outer;                             // 因为要break出两层循环 所以要在第一层for加个label
+					}
+				}
+			}
+			
+			return{
+				point: point,                                 //有点位就返回点位
+				result: point? result: 0                      //有点位就返回点位没有点位就返回和棋
+			}
+		}
+		
+	show(arr)
+	
+</script>
