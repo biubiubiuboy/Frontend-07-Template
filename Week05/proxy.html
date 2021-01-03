@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>biubiubiu</title>
+	</head>
+	<body>
+		<input id="r" type="range" min=0 max=255 />
+		<input id="g" type="range" min=0 max=255 />
+		<input id="b" type="range" min=0 max=255 />
+		<div id="color" style="width: 100px; height: 100px;"></div>
+		
+	</body>
+</html>
+
+
+<script type="text/javascript">
+  // let callbacks = []; 
+  let callbacks = new Map(); 
+  let usedReactivities = []; 
+  let reactities = new Map(); 
+
+  // let originalObj = {
+  //   a: 1,
+  //   b: {c: 3},
+  // };
+
+  let originalObj = {
+    r: 1,
+    g: 2,
+    b: 3
+  }
+
+  let reactiveObj = reactive(originalObj);
+
+  effect(() => {
+    document.getElementById("color").style.backgroundColor = `rgb(${reactiveObj.r}, ${reactiveObj.g}, ${reactiveObj.b})`;
+  });
+
+  effect(() => {
+    document.getElementById("r").value = reactiveObj.r; 
+    document.getElementById("g").value = reactiveObj.g;
+    document.getElementById("b").value = reactiveObj.b;
+  });
+
+  document.getElementById("r").addEventListener('input', event => reactiveObj.r = event.target.value); 
+  document.getElementById("g").addEventListener('input', event => reactiveObj.g = event.target.value);
+  document.getElementById("b").addEventListener('input', event => reactiveObj.b = event.target.value);
+
+  // effect(() => {
+  //   console.log('effect a: ', reactiveObj.a) 
+  // });
+
+  // effect(() => {
+  //   console.log('effect b: ', reactiveObj.b) 
+  // });
+
+  // effect(() => {
+  //   console.log('effect reactiveObj: ', reactiveObj) 
+  // });
+
+  function effect(callback) {
+    // callbacks.push(callback); 
+    usedReactivities = [];
+    callback();
+    
+    for (let reactity of usedReactivities) {
+      if (!callbacks.has(reactity[0]))
+        callbacks.set(reactity[0], new Map()); 
+      if (!callbacks.get(reactity[0]).has(reactity[1]))
+        callbacks.get(reactity[0]).set(reactity[1], []); 
+      callbacks.get(reactity[0]).get(reactity[1]).push(callback);
+    }
+  }
+
+  function reactive(object) {
+    if (reactities.has(object))
+      return reactities.get(object);
+
+    let proxy = new Proxy(object, {
+      set(obj, prop, val) {
+        // console.log('reactive set', obj, prop, val)
+        obj[prop] = val; 
+
+        // for (let cb of callbacks) {
+        //   cb(); // call dependance
+        // }
+
+        if (callbacks.get(obj) && callbacks.get(obj).get(prop))
+          for (let cb of callbacks.get(obj).get(prop)) {
+            cb();
+          }
+        return obj[prop];
+      },
+      get(obj, prop) {
+        // console.log('reactive get', obj, prop, obj[prop])
+        usedReactivities.push([obj, prop]); 
+
+        if (typeof obj[prop] === 'object')
+          return reactive(obj[prop]); 
+        
+        return obj[prop];
+      }
+    });
+
+    reactities.set(object, proxy); 
+    return proxy;
+  }
+</script>
